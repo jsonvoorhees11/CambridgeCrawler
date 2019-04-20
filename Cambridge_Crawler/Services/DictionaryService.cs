@@ -18,19 +18,18 @@ namespace Cambridge_Crawler.Services
         }
         public bool LookUp(string url, string word)
         {
-            var wordsToDeleteFromFile = new List<string>();
             var htmlDoc = Web.Load(url + word);
-            var wordBodyNode = htmlDoc.DocumentNode.SelectNodes(Xpaths.wordBodyNodes);
+            var wordEntryBodyNodes = htmlDoc.DocumentNode.SelectNodes(Xpaths.wordEntryBodyNodes);
 
-            if (wordBodyNode == null)
+            if (wordEntryBodyNodes == null)
             {
                 return false;
             }
             else
             {
-                foreach (var wordNode in wordBodyNode)
+                foreach (var wordEntryBodyNode in wordEntryBodyNodes)
                 {
-                    var wordNodeXPath = wordNode.XPath;
+                    var wordNodeXPath = wordEntryBodyNode.XPath;
                     var wordHeadXpath = $"{wordNodeXPath}/{Xpaths.wordHeadNodes}";
                     var wordTypeXpath = $"{wordNodeXPath}/{Xpaths.wordTypeNodes}";
                     var wordSenseBlockXpath = $"{wordNodeXPath}/{Xpaths.wordSenseBlockNodes}";
@@ -68,13 +67,9 @@ namespace Cambridge_Crawler.Services
                         Console.WriteLine();
                         Console.WriteLine();
                     }
-
                 }
-
             }
             return true;
-
-
         }
     }
 }

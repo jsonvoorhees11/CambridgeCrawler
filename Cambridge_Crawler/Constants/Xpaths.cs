@@ -6,8 +6,7 @@ namespace Cambridge_Crawler.Constants
 {
     public static class Xpaths
     {
-        public const string wordBodyNodes = "//*[@id=\"dataset-cald4\"]/div/div/div[1]/div/div/div";
-        public const string wordExampleNodes = "//*[@id=\"cald4-1-1-1\"]/div[1]/div/span/div/span";
+        public const string wordEntryBodyNodes = "//*[@id=\"dataset-cald4\"]/div/div/div[1]/div/div/div";
         public const string wordHeadNodes = "div[1]/div[1]/h2";
         public const string wordTypeNodes = "div[1]/div/span/span";
         public const string wordPronounceNodes = "div[1]/span[@class=\"uk\"]/span[@class=\"pron\"]/span";

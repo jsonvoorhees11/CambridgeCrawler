@@ -13,9 +13,8 @@ namespace Cambridge_Crawler.Models
     };
     public class WordVariant
     {
-        public WordType Type { get; set; }
+        public WordVariant Type { get; set; }
         public string Pronunciation { get; set; }
-        public string Meaning { get; set; }
-        public List<string> Examples { get; set; }
+        public List<WordSense> WordsSenses{ get;set; }
     }
 }
