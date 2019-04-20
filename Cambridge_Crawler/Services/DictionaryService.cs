@@ -1,5 +1,6 @@
 ﻿using Cambridge_Crawler.Constants;
 using Cambridge_Crawler.Extensions;
+using Cambridge_Crawler.Models;
 using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,7 @@ namespace Cambridge_Crawler.Services
         }
         public bool LookUp(string url, string word)
         {
+            var wordModel = new Word();
             var htmlDoc = Web.Load(url + word);
             var wordEntryBodyNodes = htmlDoc.DocumentNode.SelectNodes(Xpaths.wordEntryBodyNodes);
 
@@ -27,6 +29,8 @@ namespace Cambridge_Crawler.Services
             }
             else
             {
+                wordModel.Head = word;
+                var wordVariants = new List<WordVariant>();
                 foreach (var wordEntryBodyNode in wordEntryBodyNodes)
                 {
                     var wordNodeXPath = wordEntryBodyNode.XPath;
@@ -39,7 +43,14 @@ namespace Cambridge_Crawler.Services
                     var wordPronounce = htmlDoc.GetInnerTextByXpath(wordPronounceXpath);
                     Console.WriteLine($"{wordHead.ToUpper()}  -  {wordType}");
                     Console.WriteLine($"{wordPronounce}");
+
+                    //wordModel.WordVariants.Add(new WordVariant(wordType) { Pronunciation = wordPronounce });
+                    var wordVariant = new WordVariant(wordType);
+
                     var senseBlockNodes = htmlDoc.DocumentNode.SelectNodes(wordSenseBlockXpath);
+
+                    if (senseBlockNodes != null) { 
+                    List<WordSense> wordSenses = new List<WordSense>();
                     foreach (var senseBlock in senseBlockNodes)
                     {
                         var senseBlockXpath = senseBlock.XPath;
@@ -47,27 +58,36 @@ namespace Cambridge_Crawler.Services
                         var senseBodyDefinitionBlocks = htmlDoc.DocumentNode.SelectNodes(senseBodyDefinitionBlockXpath);
                         if (senseBodyDefinitionBlocks != null)
                         {
+                            var wordSense = new WordSense();
                             foreach (var senseBody in senseBodyDefinitionBlocks)
                             {
                                 var senseBodyXPath = senseBody.XPath;
                                 var senseBodyDefinitionHeaderXpath = $"{senseBodyXPath}/{Xpaths.wordSenseBodyDefHeadNodes}";
                                 var senseBodyDefinitionExampleXpath = $"{senseBodyXPath}/{Xpaths.wordSenseBodyDefExampleNodes}";
                                 var def = htmlDoc.GetInnerTextByXpath(senseBodyDefinitionHeaderXpath);
-                                Console.WriteLine($"Definition: {def}");
+                                
+                                wordSense.Definition = def;
+
                                 var exampleNodes = htmlDoc.DocumentNode.SelectNodes(senseBodyDefinitionExampleXpath);
                                 if (exampleNodes != null)
                                 {
                                     foreach (var example in exampleNodes)
                                     {
-                                        Console.WriteLine(example.InnerText);
+                                        wordSense.Examples.Add(example.InnerText);
                                     }
                                 }
+
                             }
+                                wordSenses.Add(wordSense);
                         }
                         Console.WriteLine();
                         Console.WriteLine();
                     }
+                        wordVariant.WordsSenses = wordSenses;
+                    }
+                    wordVariants.Add(wordVariant);
                 }
+                wordModel.WordVariants = wordVariants;
             }
             return true;
         }

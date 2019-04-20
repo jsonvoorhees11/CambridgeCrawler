@@ -13,8 +13,33 @@ namespace Cambridge_Crawler.Models
     };
     public class WordVariant
     {
-        public WordVariant Type { get; set; }
+        public WordType Type { get; set; }
         public string Pronunciation { get; set; }
         public List<WordSense> WordsSenses{ get;set; }
+        public WordVariant()
+        {
+            WordsSenses = new List<WordSense>();
+        }
+
+        //Constructor chaining
+        public WordVariant(string wordType) : this()
+        {
+            switch (wordType.Trim().ToLower())
+            {
+                case "noun":
+                    Type = WordType.noun;
+                    break;
+                case "verb":
+                    Type = WordType.verb;
+                    break;
+                case "adjective":
+                    Type = WordType.adjective;
+                    break;
+                default:
+                    Type = WordType.adverb;
+                    break;
+            }
+            
+        }
     }
 }
