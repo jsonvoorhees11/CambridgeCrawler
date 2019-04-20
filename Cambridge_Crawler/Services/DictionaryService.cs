@@ -16,14 +16,15 @@ namespace Cambridge_Crawler.Services
         {
             Web = htmlWeb;
         }
-        public void LookUp(string url, string word)
+        public bool LookUp(string url, string word)
         {
+            var wordsToDeleteFromFile = new List<string>();
             var htmlDoc = Web.Load(url + word);
             var wordBodyNode = htmlDoc.DocumentNode.SelectNodes(Xpaths.wordBodyNodes);
 
             if (wordBodyNode == null)
             {
-                return;
+                return false;
             }
             else
             {
@@ -45,28 +46,33 @@ namespace Cambridge_Crawler.Services
                         var senseBlockXpath = senseBlock.XPath;
                         var senseBodyDefinitionBlockXpath = $"{senseBlockXpath}/{Xpaths.wordSenseBodyDefBlockNodes}";
                         var senseBodyDefinitionBlocks = htmlDoc.DocumentNode.SelectNodes(senseBodyDefinitionBlockXpath);
-                        foreach (var senseBody in senseBodyDefinitionBlocks)
+                        if (senseBodyDefinitionBlocks != null)
                         {
-                            var senseBodyXPath = senseBody.XPath;
-                            var senseBodyDefinitionHeaderXpath = $"{senseBodyXPath}/{Xpaths.wordSenseBodyDefHeadNodes}";
-                            var senseBodyDefinitionExampleXpath = $"{senseBodyXPath}/{Xpaths.wordSenseBodyDefExampleNodes}";
-                            var def = htmlDoc.GetInnerTextByXpath(senseBodyDefinitionHeaderXpath);
-                            Console.WriteLine($"Definition: {def}");
-                            var exampleNodes = htmlDoc.DocumentNode.SelectNodes(senseBodyDefinitionExampleXpath);
-                            if (exampleNodes != null)
+                            foreach (var senseBody in senseBodyDefinitionBlocks)
                             {
-                                foreach (var example in exampleNodes)
+                                var senseBodyXPath = senseBody.XPath;
+                                var senseBodyDefinitionHeaderXpath = $"{senseBodyXPath}/{Xpaths.wordSenseBodyDefHeadNodes}";
+                                var senseBodyDefinitionExampleXpath = $"{senseBodyXPath}/{Xpaths.wordSenseBodyDefExampleNodes}";
+                                var def = htmlDoc.GetInnerTextByXpath(senseBodyDefinitionHeaderXpath);
+                                Console.WriteLine($"Definition: {def}");
+                                var exampleNodes = htmlDoc.DocumentNode.SelectNodes(senseBodyDefinitionExampleXpath);
+                                if (exampleNodes != null)
                                 {
-                                    Console.WriteLine(example.InnerText);
+                                    foreach (var example in exampleNodes)
+                                    {
+                                        Console.WriteLine(example.InnerText);
+                                    }
                                 }
                             }
                         }
                         Console.WriteLine();
                         Console.WriteLine();
                     }
-                    
+
                 }
+
             }
+            return true;
 
 
         }

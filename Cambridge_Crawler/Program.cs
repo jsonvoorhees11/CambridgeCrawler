@@ -16,6 +16,7 @@ namespace Cambridge_Crawler
         static DictionaryService dictService = new DictionaryService(web);
         static void Main(string[] args)
         {
+            List<string> validWords = new List<string>();
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             var firstChars = new char[26];
             string[] words;
@@ -34,11 +35,18 @@ namespace Cambridge_Crawler
                 return;
             }
 
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 1000; i++)
             {
-                dictService.LookUp(cambridgeSite, "back");
                 Console.WriteLine($"Looking up for: {words[i]}");
+                Console.WriteLine("----------------------------");
+                var isValidWord = dictService.LookUp(cambridgeSite,words[i]);
+                if (isValidWord)
+                {
+                    validWords.Add(words[i]);
+                }
             }
+
+            File.WriteAllLines("a_valid.txt", validWords);            
 
             Console.ReadKey();
         }        
