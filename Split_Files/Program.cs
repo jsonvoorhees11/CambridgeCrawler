@@ -48,7 +48,7 @@ namespace Split_Files
             }
             foreach (var line in wordsToLookUp)
             {
-                Console.Write(line + " --- ");
+                Console.Write(line + " ---- ");
             }
         }
     }
