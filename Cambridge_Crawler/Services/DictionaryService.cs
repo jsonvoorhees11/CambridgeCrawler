@@ -28,6 +28,7 @@ namespace Cambridge_Crawler.Services
             await retryPolicy.ExecuteAsync(async () =>
             {
                 htmlDoc = await Web.LoadFromWebAsync(url + word);
+                
             });
             var wordEntryBodyNodes = htmlDoc.DocumentNode.SelectNodes(Xpaths.wordEntryBodyNodes);
 

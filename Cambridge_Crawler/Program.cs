@@ -7,6 +7,7 @@ using Polly.Retry;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -57,12 +58,12 @@ namespace Cambridge_Crawler
                 {
                     IEnumerable<Word> wordList = GetWordListFromTask(taskList).Result;
                     Console.WriteLine($"Completed {maximumTaskCount} tasks");
-                    DataService.SaveWordList(wordList);
+                    DataService.SaveWordList(wordList.Where(w=>w!=null));
                     taskList.Clear();
                 }
             }
             IEnumerable<Word> leftWordList = GetWordListFromTask(taskList).Result;
-            DataService.SaveWordList(leftWordList);
+            DataService.SaveWordList(leftWordList.Where(w=>w!=null));
 
             //File.WriteAllLines("a_valid.txt", validWords);            
 
@@ -72,8 +73,14 @@ namespace Cambridge_Crawler
         static void SetUpRetryPolicy()
         {
             retryPolicy = Policy
-                .Handle<HttpRequestException>()
-                .WaitAndRetryAsync(maxRetryAttempts, i => pauseBetweenFailures);
+                .Handle<Exception>()
+                .WaitAndRetryAsync(maxRetryAttempts, i =>
+                {
+                    Console.WriteLine("Retry...");
+                    return TimeSpan.FromSeconds(Math.Pow(2, i));
+                })
+                
+                ;
         }
 
         static async Task<IEnumerable<Word>> GetWordListFromTask(IEnumerable<Task<Word>> taskList)

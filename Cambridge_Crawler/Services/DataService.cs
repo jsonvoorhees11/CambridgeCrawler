@@ -24,7 +24,7 @@ namespace Cambridge_Crawler.Services
 
             try
             {
-                File.WriteAllText("dict_a.txt", wordListJsonString);
+                File.AppendAllText("dict_a.txt", wordListJsonString);
             }
             catch (Exception ex)
             {
