@@ -20,7 +20,7 @@ namespace Cambridge_Crawler.Services
         {
             Web = htmlWeb;
         }
-        public async Task<bool> LookUp(AsyncRetryPolicy retryPolicy, string url, string word)
+        public async Task<Word> LookUp(AsyncRetryPolicy retryPolicy, string url, string word)
         {
             var wordModel = new Word();
             HtmlDocument htmlDoc = new HtmlDocument();
@@ -33,7 +33,7 @@ namespace Cambridge_Crawler.Services
 
             if (wordEntryBodyNodes == null)
             {
-                return false;
+                return null ;
             }
             else
             {
@@ -98,7 +98,7 @@ namespace Cambridge_Crawler.Services
                 }
                 wordModel.WordVariants = wordVariants;
             }
-            return true;
+            return wordModel;
         }
     }
 }

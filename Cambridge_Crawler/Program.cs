@@ -1,4 +1,5 @@
 ﻿using Cambridge_Crawler.Constants;
+using Cambridge_Crawler.Models;
 using Cambridge_Crawler.Services;
 using HtmlAgilityPack;
 using Polly;
@@ -17,6 +18,7 @@ namespace Cambridge_Crawler
         const char asciiAValue = 'a';
         const string filePath = "./350000-words.txt";
         const int maxRetryAttempts = 5;
+        const int maximumTaskCount = 500;
         static readonly TimeSpan pauseBetweenFailures = TimeSpan.FromSeconds(1);
         static AsyncRetryPolicy retryPolicy;
 
@@ -44,22 +46,25 @@ namespace Cambridge_Crawler
                 return;
             }
             SetUpRetryPolicy();
-            List<Task<bool>> taskList = new List<Task<bool>>();
+            List<Task<Word>> taskList = new List<Task<Word>>();
             for (int i = 0; i < words.Length; i++)
             {
                 Console.WriteLine($"Looking up for: {words[i]}");
                 Console.WriteLine("----------------------------");
                 var isValidWordTask = dictService.LookUp(retryPolicy, cambridgeSite,words[i]);
                 taskList.Add(isValidWordTask);
-                if (taskList.Count>200)
+                if (taskList.Count>= maximumTaskCount)
                 {
-                    Task.WaitAll(taskList.ToArray());
-                    Console.WriteLine("Completed 20 tasks");
+                    IEnumerable<Word> wordList = GetWordListFromTask(taskList).Result;
+                    Console.WriteLine($"Completed {maximumTaskCount} tasks");
+                    DataService.SaveWordList(wordList);
                     taskList.Clear();
                 }
             }
+            IEnumerable<Word> leftWordList = GetWordListFromTask(taskList).Result;
+            DataService.SaveWordList(leftWordList);
 
-            File.WriteAllLines("a_valid.txt", validWords);            
+            //File.WriteAllLines("a_valid.txt", validWords);            
 
             Console.ReadKey();
         }        
@@ -69,6 +74,12 @@ namespace Cambridge_Crawler
             retryPolicy = Policy
                 .Handle<HttpRequestException>()
                 .WaitAndRetryAsync(maxRetryAttempts, i => pauseBetweenFailures);
+        }
+
+        static async Task<IEnumerable<Word>> GetWordListFromTask(IEnumerable<Task<Word>> taskList)
+        {
+            IEnumerable<Word> wordList = await Task.WhenAll(taskList);
+            return wordList;
         }
     }
 }
