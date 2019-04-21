@@ -1,9 +1,13 @@
 ﻿using Cambridge_Crawler.Constants;
 using Cambridge_Crawler.Services;
 using HtmlAgilityPack;
+using Polly;
+using Polly.Retry;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace Cambridge_Crawler
 {
@@ -12,8 +16,13 @@ namespace Cambridge_Crawler
         const string cambridgeSite = @"https://dictionary.cambridge.org/dictionary/english/";
         const char asciiAValue = 'a';
         const string filePath = "./350000-words.txt";
+        const int maxRetryAttempts = 5;
+        static readonly TimeSpan pauseBetweenFailures = TimeSpan.FromSeconds(1);
+        static AsyncRetryPolicy retryPolicy;
+
         static HtmlWeb web = new HtmlWeb();
         static DictionaryService dictService = new DictionaryService(web);
+        
         static void Main(string[] args)
         {
             List<string> validWords = new List<string>();
@@ -34,15 +43,19 @@ namespace Cambridge_Crawler
                 Console.WriteLine(ex);
                 return;
             }
-
-            for (int i = 0; i < 1000; i++)
+            SetUpRetryPolicy();
+            List<Task<bool>> taskList = new List<Task<bool>>();
+            for (int i = 0; i < words.Length; i++)
             {
                 Console.WriteLine($"Looking up for: {words[i]}");
                 Console.WriteLine("----------------------------");
-                var isValidWord = dictService.LookUp(cambridgeSite,words[i]);
-                if (isValidWord)
+                var isValidWordTask = dictService.LookUp(retryPolicy, cambridgeSite,words[i]);
+                taskList.Add(isValidWordTask);
+                if (taskList.Count>200)
                 {
-                    validWords.Add(words[i]);
+                    Task.WaitAll(taskList.ToArray());
+                    Console.WriteLine("Completed 20 tasks");
+                    taskList.Clear();
                 }
             }
 
@@ -50,5 +63,12 @@ namespace Cambridge_Crawler
 
             Console.ReadKey();
         }        
+
+        static void SetUpRetryPolicy()
+        {
+            retryPolicy = Policy
+                .Handle<HttpRequestException>()
+                .WaitAndRetryAsync(maxRetryAttempts, i => pauseBetweenFailures);
+        }
     }
 }

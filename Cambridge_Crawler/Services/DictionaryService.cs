@@ -2,9 +2,12 @@
 using Cambridge_Crawler.Extensions;
 using Cambridge_Crawler.Models;
 using HtmlAgilityPack;
+using Polly.Retry;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,10 +20,15 @@ namespace Cambridge_Crawler.Services
         {
             Web = htmlWeb;
         }
-        public bool LookUp(string url, string word)
+        public async Task<bool> LookUp(AsyncRetryPolicy retryPolicy, string url, string word)
         {
             var wordModel = new Word();
-            var htmlDoc = Web.Load(url + word);
+            HtmlDocument htmlDoc = new HtmlDocument();
+
+            await retryPolicy.ExecuteAsync(async () =>
+            {
+                htmlDoc = await Web.LoadFromWebAsync(url + word);
+            });
             var wordEntryBodyNodes = htmlDoc.DocumentNode.SelectNodes(Xpaths.wordEntryBodyNodes);
 
             if (wordEntryBodyNodes == null)
@@ -46,43 +54,44 @@ namespace Cambridge_Crawler.Services
 
                     //wordModel.WordVariants.Add(new WordVariant(wordType) { Pronunciation = wordPronounce });
                     var wordVariant = new WordVariant(wordType);
-
+                    wordVariant.Pronunciation = wordPronounce;
                     var senseBlockNodes = htmlDoc.DocumentNode.SelectNodes(wordSenseBlockXpath);
 
-                    if (senseBlockNodes != null) { 
-                    List<WordSense> wordSenses = new List<WordSense>();
-                    foreach (var senseBlock in senseBlockNodes)
+                    if (senseBlockNodes != null)
                     {
-                        var senseBlockXpath = senseBlock.XPath;
-                        var senseBodyDefinitionBlockXpath = $"{senseBlockXpath}/{Xpaths.wordSenseBodyDefBlockNodes}";
-                        var senseBodyDefinitionBlocks = htmlDoc.DocumentNode.SelectNodes(senseBodyDefinitionBlockXpath);
-                        if (senseBodyDefinitionBlocks != null)
+                        List<WordSense> wordSenses = new List<WordSense>();
+                        foreach (var senseBlock in senseBlockNodes)
                         {
-                            var wordSense = new WordSense();
-                            foreach (var senseBody in senseBodyDefinitionBlocks)
+                            var senseBlockXpath = senseBlock.XPath;
+                            var senseBodyDefinitionBlockXpath = $"{senseBlockXpath}/{Xpaths.wordSenseBodyDefBlockNodes}";
+                            var senseBodyDefinitionBlocks = htmlDoc.DocumentNode.SelectNodes(senseBodyDefinitionBlockXpath);
+                            if (senseBodyDefinitionBlocks != null)
                             {
-                                var senseBodyXPath = senseBody.XPath;
-                                var senseBodyDefinitionHeaderXpath = $"{senseBodyXPath}/{Xpaths.wordSenseBodyDefHeadNodes}";
-                                var senseBodyDefinitionExampleXpath = $"{senseBodyXPath}/{Xpaths.wordSenseBodyDefExampleNodes}";
-                                var def = htmlDoc.GetInnerTextByXpath(senseBodyDefinitionHeaderXpath);
-                                
-                                wordSense.Definition = def;
-
-                                var exampleNodes = htmlDoc.DocumentNode.SelectNodes(senseBodyDefinitionExampleXpath);
-                                if (exampleNodes != null)
+                                var wordSense = new WordSense();
+                                foreach (var senseBody in senseBodyDefinitionBlocks)
                                 {
-                                    foreach (var example in exampleNodes)
-                                    {
-                                        wordSense.Examples.Add(example.InnerText);
-                                    }
-                                }
+                                    var senseBodyXPath = senseBody.XPath;
+                                    var senseBodyDefinitionHeaderXpath = $"{senseBodyXPath}/{Xpaths.wordSenseBodyDefHeadNodes}";
+                                    var senseBodyDefinitionExampleXpath = $"{senseBodyXPath}/{Xpaths.wordSenseBodyDefExampleNodes}";
+                                    var def = htmlDoc.GetInnerTextByXpath(senseBodyDefinitionHeaderXpath);
 
-                            }
+                                    wordSense.Definition = def;
+
+                                    var exampleNodes = htmlDoc.DocumentNode.SelectNodes(senseBodyDefinitionExampleXpath);
+                                    if (exampleNodes != null)
+                                    {
+                                        foreach (var example in exampleNodes)
+                                        {
+                                            wordSense.Examples.Add(example.InnerText);
+                                        }
+                                    }
+
+                                }
                                 wordSenses.Add(wordSense);
+                            }
+                            Console.WriteLine();
+                            Console.WriteLine();
                         }
-                        Console.WriteLine();
-                        Console.WriteLine();
-                    }
                         wordVariant.WordsSenses = wordSenses;
                     }
                     wordVariants.Add(wordVariant);

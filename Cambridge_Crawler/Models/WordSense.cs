@@ -8,5 +8,9 @@ namespace Cambridge_Crawler.Models
     {
         public string Definition { get; set; }
         public List<string> Examples { get; set; }
+        public WordSense()
+        {
+            Examples = new List<string>();
+        }
     }
 }
